@@ -4,7 +4,7 @@ using Unity.Entities;
 namespace Jobs
 {
 	[BurstCompile]
-	public struct RemoveEntitiesJob : IJobEntity
+	public partial struct RemoveEntitiesJob : IJobEntity
 	{
 		public EntityCommandBuffer.ParallelWriter Ecb;
 

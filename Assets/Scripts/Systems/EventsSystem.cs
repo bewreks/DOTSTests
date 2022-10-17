@@ -9,7 +9,8 @@ namespace Systems
 	[UpdateAfter(typeof(PointerSystem))]
 	public partial class EventsSystem : SystemBase
 	{
-		private EntityQuery _eventsQuery;
+		private EntityQuery                                  _eventsQuery;
+		private BeginInitializationEntityCommandBufferSystem _commandBufferSystem;
 
 		protected override void OnCreate()
 		{
@@ -20,6 +21,8 @@ namespace Systems
 					                                    typeof(UserClickEvent)
 				                                    }
 			                              });
+
+			_commandBufferSystem = World.GetOrCreateSystem<BeginInitializationEntityCommandBufferSystem>();
 
 			RequireForUpdate(_eventsQuery);
 		}
@@ -34,13 +37,12 @@ namespace Systems
 
 		protected override void OnUpdate()
 		{
-			var buffer = new EntityCommandBuffer(Allocator.Temp);
-			new RemoveEntitiesJob
+			var buffer = _commandBufferSystem.CreateCommandBuffer();
+			Dependency = new RemoveEntitiesJob
 			{
 				Ecb = buffer.AsParallelWriter()
-			}.ScheduleParallel(_eventsQuery);
-			buffer.Playback(EntityManager);
-			buffer.Dispose();
+			}.ScheduleParallel(_eventsQuery, Dependency);
+			_commandBufferSystem.AddJobHandleForProducer(Dependency);
 		}
 	}
 }

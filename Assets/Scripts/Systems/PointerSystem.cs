@@ -1,6 +1,5 @@
 ﻿using Components;
 using Events;
-using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -63,16 +62,16 @@ namespace Systems
 				.WithAll<UserClickEvent>()
 				.ForEach((ref UserClickEvent click) => { position = click.Position; }).Run();
 
-			var updateMarkersPositionJob = new UpdateMarkersPositionJob
+			var updateMarkersPositionJob = new Jobs.SetEntityPositionJob
 			                               {
 				                               Position = position
 			                               };
-			var startMarkerAnimationJob = new StartMarkerAnimationJob
+			var startMarkerAnimationJob = new Jobs.StartFadeOutJob
 			                              {
 				                              Ecb       = ecb.AsParallelWriter(),
 				                              Prototype = NewFadeComponent()
 			                              };
-			var restartMarkerAnimationJob = new RestartMarkerAnimationJob
+			var restartMarkerAnimationJob = new Jobs.RestartFadeOutJob
 			                                {
 				                                Ecb       = ecb.AsParallelWriter(),
 				                                Prototype = NewFadeComponent()
@@ -102,45 +101,6 @@ namespace Systems
 					       Time    = 0.2f
 				       };
 			}
-		}
-	}
-
-	[BurstCompile]
-	public partial struct UpdateMarkersPositionJob : IJobEntity
-	{
-		public float3 Position;
-
-		void Execute(ref Translation translation)
-		{
-			translation.Value = Position;
-		}
-	}
-
-	[BurstCompile]
-	public partial struct StartMarkerAnimationJob : IJobEntity
-	{
-		public FadeOutComponent                   Prototype;
-		public EntityCommandBuffer.ParallelWriter Ecb;
-
-		void Execute(Entity e, [EntityInQueryIndex] int index)
-		{
-			Ecb.AddComponent(index, e, Prototype);
-			Ecb.AddComponent(index, e, new NonUniformScale
-			                           {
-				                           Value = float3.zero
-			                           });
-		}
-	}
-
-	[BurstCompile]
-	public partial struct RestartMarkerAnimationJob : IJobEntity
-	{
-		public FadeOutComponent                   Prototype;
-		public EntityCommandBuffer.ParallelWriter Ecb;
-
-		void Execute(Entity e, [EntityInQueryIndex] int index)
-		{
-			Ecb.SetComponent(index, e, Prototype);
 		}
 	}
 }

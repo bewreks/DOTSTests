@@ -9,12 +9,13 @@ namespace Jobs
 	[BurstCompile]
 	public partial struct StartFadeOutJob : IJobEntity
 	{
-		public FadeOutComponent                   Prototype;
+		public float Speed;
+
 		public EntityCommandBuffer.ParallelWriter Ecb;
 
 		void Execute(Entity e, [EntityInQueryIndex] int index)
 		{
-			Ecb.AddComponent(index, e, Prototype);
+			Ecb.AddComponent(index, e, FadeOutComponent.New(Speed));
 			Ecb.AddComponent(index, e, new NonUniformScale
 			                           {
 				                           Value = float3.zero

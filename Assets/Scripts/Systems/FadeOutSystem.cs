@@ -4,7 +4,7 @@ using Unity.Transforms;
 
 namespace Systems
 {
-	[UpdateAfter(typeof(UserInputSystem))]
+	[UpdateInGroup(typeof(SimulationSystemGroup))]
 	public partial class FadeOutSystem : SystemBase
 	{
 		private EntityQuery _fadeOutQuery;

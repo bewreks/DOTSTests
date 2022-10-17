@@ -69,13 +69,11 @@ namespace Systems
 			                               };
 			var startMarkerAnimationJob = new Jobs.StartFadeOutJob
 			                              {
-				                              Ecb       = ecb.AsParallelWriter(),
-				                              Prototype = NewFadeComponent()
+				                              Ecb = ecb.AsParallelWriter()
 			                              };
 			var restartMarkerAnimationJob = new Jobs.RestartFadeOutJob
 			                                {
-				                                Ecb       = ecb.AsParallelWriter(),
-				                                Prototype = NewFadeComponent()
+				                                Ecb = ecb.AsParallelWriter()
 			                                };
 
 			Dependency = updateMarkersPositionJob.ScheduleParallel(_markersQuery, Dependency);
@@ -90,17 +88,6 @@ namespace Systems
 			{
 				Dependency = restartMarkerAnimationJob.ScheduleParallel(_animatedMarkersQuery, Dependency);
 				_commandBufferSystem.AddJobHandleForProducer(Dependency);
-			}
-
-			FadeOutComponent NewFadeComponent()
-			{
-				return new FadeOutComponent
-				       {
-					       From    = new float3(1),
-					       To      = float3.zero,
-					       CurTime = 0,
-					       Time    = 0.2f
-				       };
 			}
 		}
 	}

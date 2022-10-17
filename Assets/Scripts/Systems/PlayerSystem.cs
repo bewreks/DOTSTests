@@ -92,15 +92,7 @@ namespace Systems
 
 		private void Execute(Entity e, [EntityInQueryIndex] int index, in Translation translation)
 		{
-			var targetVector = Position - translation.Value;
-			var time         = math.length(targetVector) * Speed;
-
-			Ecb.AddComponent(index, e, new MoveToComponent
-			                           {
-				                           From        = translation.Value,
-				                           To          = Position,
-				                           TotalTime   = time
-			                           });
+			Ecb.AddComponent(index, e, MoveToComponent.New(translation.Value, Position, Speed));
 		}
 	}
 
@@ -113,15 +105,7 @@ namespace Systems
 
 		private void Execute(Entity e, [EntityInQueryIndex] int index, in Translation translation)
 		{
-			var targetVector = Position - translation.Value;
-			var time         = math.length(targetVector) * Speed;
-
-			Ecb.SetComponent(index, e, new MoveToComponent
-			                           {
-				                           From        = translation.Value,
-				                           To          = Position,
-				                           TotalTime   = time
-			                           });
+			Ecb.SetComponent(index, e, MoveToComponent.New(translation.Value, Position, Speed));
 		}
 	}
 }

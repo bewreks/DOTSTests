@@ -1,12 +1,10 @@
 ﻿using Events;
 using Jobs;
-using Unity.Collections;
 using Unity.Entities;
 
 namespace Systems
 {
 	[UpdateInGroup(typeof(PresentationSystemGroup), OrderLast = true)]
-	[UpdateAfter(typeof(PointerSystem))]
 	public partial class EventsSystem : SystemBase
 	{
 		private EntityQuery                                  _eventsQuery;

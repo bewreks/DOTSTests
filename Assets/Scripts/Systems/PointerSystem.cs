@@ -15,7 +15,7 @@ namespace Systems
 		private EntityQuery _animatedMarkersQuery;
 		private EntityQuery _notAnimatedMarkersQuery;
 
-		private EndSimulationEntityCommandBufferSystem _endSimulationEntityCommandBufferSystem;
+		private EndInitializationEntityCommandBufferSystem _commandBufferSystem;
 
 		protected override void OnCreate()
 		{
@@ -24,13 +24,13 @@ namespace Systems
 				                                 All = new ComponentType[] { typeof(UserClickEvent) }
 			                                 });
 
-			_endSimulationEntityCommandBufferSystem = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
+			_commandBufferSystem = World.GetOrCreateSystem<EndInitializationEntityCommandBufferSystem>();
 
 			_markersQuery = GetEntityQuery(new EntityQueryDesc
 			                               {
 				                               All = new ComponentType[]
 				                                     {
-					                                     typeof(MarkerComponent),
+					                                     typeof(PointerMarker),
 					                                     typeof(Translation)
 				                                     }
 			                               });
@@ -39,14 +39,14 @@ namespace Systems
 			                                       {
 				                                       All = new ComponentType[]
 				                                             {
-					                                             typeof(MarkerComponent),
+					                                             typeof(PointerMarker),
 					                                             typeof(FadeOutComponent)
 				                                             }
 			                                       });
 
 			_notAnimatedMarkersQuery = GetEntityQuery(new EntityQueryDesc
 			                                          {
-				                                          All  = new ComponentType[] { typeof(MarkerComponent) },
+				                                          All  = new ComponentType[] { typeof(PointerMarker) },
 				                                          None = new ComponentType[] { typeof(FadeOutComponent) }
 			                                          });
 
@@ -56,10 +56,11 @@ namespace Systems
 		protected override void OnUpdate()
 		{
 			var position = float3.zero;
-			var ecb      = _endSimulationEntityCommandBufferSystem.CreateCommandBuffer();
+			var ecb      = _commandBufferSystem.CreateCommandBuffer();
 
 			Entities
 				.WithAll<UserClickEvent>()
+				.WithStoreEntityQueryInField(ref _userClickEvent)
 				.ForEach((ref UserClickEvent click) => { position = click.Position; }).Run();
 
 			var updateMarkersPositionJob = new Jobs.SetEntityPositionJob
@@ -82,13 +83,13 @@ namespace Systems
 			if (!_notAnimatedMarkersQuery.IsEmpty)
 			{
 				Dependency = startMarkerAnimationJob.ScheduleParallel(_notAnimatedMarkersQuery, Dependency);
-				_endSimulationEntityCommandBufferSystem.AddJobHandleForProducer(Dependency);
+				_commandBufferSystem.AddJobHandleForProducer(Dependency);
 			}
 
 			if (!_animatedMarkersQuery.IsEmpty)
 			{
 				Dependency = restartMarkerAnimationJob.ScheduleParallel(_animatedMarkersQuery, Dependency);
-				_endSimulationEntityCommandBufferSystem.AddJobHandleForProducer(Dependency);
+				_commandBufferSystem.AddJobHandleForProducer(Dependency);
 			}
 
 			FadeOutComponent NewFadeComponent()

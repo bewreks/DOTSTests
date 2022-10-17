@@ -5,7 +5,7 @@ namespace Components
 {
 	[Serializable]
 	[GenerateAuthoringComponent]
-	public struct MarkerComponent : IComponentData
+	public struct PointerMarker : IComponentData
 	{
 		
 	}

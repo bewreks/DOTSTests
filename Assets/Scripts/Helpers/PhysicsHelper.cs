@@ -1,7 +1,6 @@
 ﻿using System;
 using Unity.Physics;
 using Ray = UnityEngine.Ray;
-using RaycastHit = Unity.Physics.RaycastHit;
 
 namespace Helpers
 {

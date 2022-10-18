@@ -5,37 +5,38 @@ using Unity.Transforms;
 
 namespace Systems
 {
+	
 	[UpdateInGroup(typeof(UpdateGroup))]
-	public partial class MoveToSystem : SystemBase
+	public partial class RotateToSystem : SystemBase
 	{
-		private EntityQuery _movables;
+		private EntityQuery _rotates;
 
 		private EndInitializationEntityCommandBufferSystem _commandBufferSystem;
 
 		protected override void OnCreate()
 		{
-			_movables = GetEntityQuery(new EntityQueryDesc
+			_rotates = GetEntityQuery(new EntityQueryDesc
 			                           {
 				                           All = new ComponentType[]
 				                                 {
-					                                 typeof(MoveToComponent),
+					                                 typeof(RotateToComponent),
 					                                 typeof(Translation)
 				                                 }
 			                           });
 
 			_commandBufferSystem = World.GetOrCreateSystem<EndInitializationEntityCommandBufferSystem>();
 
-			RequireForUpdate(_movables);
+			RequireForUpdate(_rotates);
 		}
 
 		protected override void OnUpdate()
 		{
 			var buffer = _commandBufferSystem.CreateCommandBuffer();
-			Dependency = new Jobs.MovingJob
+			Dependency = new Jobs.RotationJob
 			             {
-				             Ecb = buffer.AsParallelWriter(),
+				             Ecb       = buffer.AsParallelWriter(),
 				             DeltaTime = Time.DeltaTime
-			             }.ScheduleParallel(_movables, Dependency);
+			             }.ScheduleParallel(_rotates, Dependency);
 			_commandBufferSystem.AddJobHandleForProducer(Dependency);
 		}
 	}

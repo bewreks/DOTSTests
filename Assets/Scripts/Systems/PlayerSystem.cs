@@ -1,111 +1,64 @@
 ﻿using Components;
 using Events;
-using Unity.Burst;
+using Groups;
+using Jobs;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace Systems
 {
-	[UpdateInGroup(typeof(InitializationSystemGroup))]
+	[UpdateInGroup(typeof(InputGroup))]
 	[UpdateAfter(typeof(PointerSystem))]
 	public partial class PlayerSystem : SystemBase
 	{
 		private EntityQuery _userClickEvent;
-		private EntityQuery _movedEntityQuery;
-		private EntityQuery _notMovedEntityQuery;
+		private EntityQuery _playerQuery;
 
-		private EndInitializationEntityCommandBufferSystem _commandBufferSystem;
+		private EndInitializationEntityCommandBufferSystem _bufferSystem;
 
 		protected override void OnCreate()
 		{
-			_commandBufferSystem = World.GetOrCreateSystem<EndInitializationEntityCommandBufferSystem>();
+			_playerQuery = GetEntityQuery(new EntityQueryDesc
+			                              {
+				                              All = new ComponentType[]
+				                                    {
+					                                    typeof(PlayerMarker),
+					                                    typeof(Translation),
+					                                    typeof(Rotation)
+				                                    },
+			                              });
 
-			_movedEntityQuery = GetEntityQuery(new EntityQueryDesc
-			                                   {
-				                                   All = new ComponentType[]
-				                                         {
-					                                         typeof(PlayerMarker),
-					                                         typeof(Translation),
-					                                         typeof(MoveToComponent)
-				                                         }
-			                                   });
-			
-			_notMovedEntityQuery = GetEntityQuery(new EntityQueryDesc
-			                                      {
-				                                      All = new ComponentType[]
-				                                            {
-					                                            typeof(PlayerMarker),
-					                                            typeof(Translation)
-				                                            },
-				                                      None = new ComponentType[]
-				                                             {
-					                                             typeof(MoveToComponent)
-				                                             }
-			                                      });
-			
+			_bufferSystem = World.GetOrCreateSystem<EndInitializationEntityCommandBufferSystem>();
+
 			RequireForUpdate(_userClickEvent);
 		}
 
 		protected override void OnUpdate()
 		{
 			var position = float3.zero;
-			var ecb      = _commandBufferSystem.CreateCommandBuffer();
 
 			Entities
 				.WithAll<UserClickEvent>()
 				.WithStoreEntityQueryInField(ref _userClickEvent)
 				.ForEach((ref UserClickEvent click) => { position = click.Position; }).Run();
 
-			if (!_notMovedEntityQuery.IsEmpty)
-			{
-				var startMoveToJob = new StartMoveToJob
-				                     {
-					                     Ecb      = ecb.AsParallelWriter(),
-					                     Position = position,
-					                     Speed    = 0.1f
-				                     };
-				
-				Dependency = startMoveToJob.ScheduleParallel(_notMovedEntityQuery, Dependency);
-			}
 
-			if (!_movedEntityQuery.IsEmpty)
-			{
-				Dependency = new RestartMoveToJob
-				             {
-					             Ecb      = ecb.AsParallelWriter(),
-					             Position = position,
-					             Speed    = 0.1f
-				             }.ScheduleParallel(_movedEntityQuery, Dependency);
-			}
+			Dependency = new StartRotateToJob
+			             {
+				             Ecb      = _bufferSystem.CreateCommandBuffer().AsParallelWriter(),
+				             Position = position,
+				             Speed    = .01f
+			             }.ScheduleParallel(_playerQuery, Dependency);
 
-			_commandBufferSystem.AddJobHandleForProducer(Dependency);
-		}
-	}
 
-	[BurstCompile]
-	public partial struct StartMoveToJob : IJobEntity
-	{
-		public float                              Speed;
-		public float3                             Position;
-		public EntityCommandBuffer.ParallelWriter Ecb;
-
-		private void Execute(Entity e, [EntityInQueryIndex] int index, in Translation translation)
-		{
-			Ecb.AddComponent(index, e, MoveToComponent.New(translation.Value, Position, Speed));
-		}
-	}
-
-	[BurstCompile]
-	public partial struct RestartMoveToJob : IJobEntity
-	{
-		public float                              Speed;
-		public float3                             Position;
-		public EntityCommandBuffer.ParallelWriter Ecb;
-
-		private void Execute(Entity e, [EntityInQueryIndex] int index, in Translation translation)
-		{
-			Ecb.SetComponent(index, e, MoveToComponent.New(translation.Value, Position, Speed));
+			Dependency = new StartMoveToJob
+			             {
+				             Ecb      = _bufferSystem.CreateCommandBuffer().AsParallelWriter(),
+				             Position = position,
+				             Speed    = 0.1f
+			             }.ScheduleParallel(_playerQuery, Dependency);
+			_bufferSystem.AddJobHandleForProducer(Dependency);
 		}
 	}
 }

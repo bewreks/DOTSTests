@@ -1,4 +1,5 @@
 ﻿using Events;
+using Groups;
 using Helpers;
 using Unity.Entities;
 using Unity.Physics.Systems;
@@ -6,7 +7,7 @@ using UnityEngine;
 
 namespace Systems
 {
-	[UpdateInGroup(typeof(InitializationSystemGroup), OrderFirst = true)]
+	[UpdateInGroup(typeof(InputGroup), OrderFirst = true)]
 	[UpdateBefore(typeof(PointerSystem))]
 	public partial class UserInputSystem : SystemBase
 	{

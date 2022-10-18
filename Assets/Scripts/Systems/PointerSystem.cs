@@ -1,21 +1,23 @@
-﻿using Components;
+﻿using System;
+using Components;
 using Events;
+using Groups;
+using Jobs;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
 
 namespace Systems
 {
-	[UpdateInGroup(typeof(InitializationSystemGroup))]
+	[UpdateInGroup(typeof(InputGroup))]
 	[UpdateAfter(typeof(UserInputSystem))]
 	public partial class PointerSystem : SystemBase
 	{
 		private EntityQuery _userClickEvent;
 		private EntityQuery _markersQuery;
-		private EntityQuery _animatedMarkersQuery;
-		private EntityQuery _notAnimatedMarkersQuery;
 
-		private EndInitializationEntityCommandBufferSystem _commandBufferSystem;
+		private EndInitializationEntityCommandBufferSystem _bufferSystem;
 
 		protected override void OnCreate()
 		{
@@ -23,8 +25,6 @@ namespace Systems
 			                                 {
 				                                 All = new ComponentType[] { typeof(UserClickEvent) }
 			                                 });
-
-			_commandBufferSystem = World.GetOrCreateSystem<EndInitializationEntityCommandBufferSystem>();
 
 			_markersQuery = GetEntityQuery(new EntityQueryDesc
 			                               {
@@ -35,20 +35,7 @@ namespace Systems
 				                                     }
 			                               });
 
-			_animatedMarkersQuery = GetEntityQuery(new EntityQueryDesc
-			                                       {
-				                                       All = new ComponentType[]
-				                                             {
-					                                             typeof(PointerMarker),
-					                                             typeof(FadeOutComponent)
-				                                             }
-			                                       });
-
-			_notAnimatedMarkersQuery = GetEntityQuery(new EntityQueryDesc
-			                                          {
-				                                          All  = new ComponentType[] { typeof(PointerMarker) },
-				                                          None = new ComponentType[] { typeof(FadeOutComponent) }
-			                                          });
+			_bufferSystem = World.GetOrCreateSystem<EndInitializationEntityCommandBufferSystem>();
 
 			RequireForUpdate(_userClickEvent);
 		}
@@ -56,39 +43,23 @@ namespace Systems
 		protected override void OnUpdate()
 		{
 			var position = float3.zero;
-			var ecb      = _commandBufferSystem.CreateCommandBuffer();
 
 			Entities
 				.WithAll<UserClickEvent>()
 				.WithStoreEntityQueryInField(ref _userClickEvent)
 				.ForEach((ref UserClickEvent click) => { position = click.Position; }).Run();
 
-			var updateMarkersPositionJob = new Jobs.SetEntityPositionJob
-			                               {
-				                               Position = position
-			                               };
-			var startMarkerAnimationJob = new Jobs.StartFadeOutJob
-			                              {
-				                              Ecb = ecb.AsParallelWriter()
-			                              };
-			var restartMarkerAnimationJob = new Jobs.RestartFadeOutJob
-			                                {
-				                                Ecb = ecb.AsParallelWriter()
-			                                };
+			Dependency = new SetEntityPositionJob
+			             {
+				             Position = position
+			             }.ScheduleParallel(_markersQuery, Dependency);
 
-			Dependency = updateMarkersPositionJob.ScheduleParallel(_markersQuery, Dependency);
-
-			if (!_notAnimatedMarkersQuery.IsEmpty)
-			{
-				Dependency = startMarkerAnimationJob.ScheduleParallel(_notAnimatedMarkersQuery, Dependency);
-				_commandBufferSystem.AddJobHandleForProducer(Dependency);
-			}
-
-			if (!_animatedMarkersQuery.IsEmpty)
-			{
-				Dependency = restartMarkerAnimationJob.ScheduleParallel(_animatedMarkersQuery, Dependency);
-				_commandBufferSystem.AddJobHandleForProducer(Dependency);
-			}
+			Dependency = new AddFadeOutComponentsJob
+			             {
+				             Speed = 0.2f,
+				             Ecb   = _bufferSystem.CreateCommandBuffer().AsParallelWriter()
+			             }.ScheduleParallel(_markersQuery, Dependency);
+			_bufferSystem.AddJobHandleForProducer(Dependency);
 		}
 	}
 }

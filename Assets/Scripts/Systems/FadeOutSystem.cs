@@ -1,10 +1,11 @@
 ﻿using Components;
+using Groups;
 using Unity.Entities;
 using Unity.Transforms;
 
 namespace Systems
 {
-	[UpdateInGroup(typeof(SimulationSystemGroup))]
+	[UpdateInGroup(typeof(UpdateGroup))]
 	public partial class FadeOutSystem : SystemBase
 	{
 		private EntityQuery _fadeOutQuery;

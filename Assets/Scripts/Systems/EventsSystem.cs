@@ -30,6 +30,7 @@ namespace Systems
 		{
 			var eventEntity = EntityManager.CreateEntity();
 			EntityManager.AddComponentData(eventEntity, component);
+			SetSingleton(component);
 			return eventEntity;
 		}
 

@@ -14,18 +14,12 @@ namespace Systems
 	[UpdateAfter(typeof(UserInputSystem))]
 	public partial class PointerSystem : SystemBase
 	{
-		private EntityQuery _userClickEvent;
 		private EntityQuery _markersQuery;
 
 		private EndInitializationEntityCommandBufferSystem _bufferSystem;
 
 		protected override void OnCreate()
 		{
-			_userClickEvent = GetEntityQuery(new EntityQueryDesc
-			                                 {
-				                                 All = new ComponentType[] { typeof(UserClickEvent) }
-			                                 });
-
 			_markersQuery = GetEntityQuery(new EntityQueryDesc
 			                               {
 				                               All = new ComponentType[]
@@ -37,17 +31,13 @@ namespace Systems
 
 			_bufferSystem = World.GetOrCreateSystem<EndInitializationEntityCommandBufferSystem>();
 
-			RequireForUpdate(_userClickEvent);
+			RequireSingletonForUpdate<UserClickEvent>();
 		}
 
 		protected override void OnUpdate()
 		{
-			var position = float3.zero;
-
-			Entities
-				.WithAll<UserClickEvent>()
-				.WithStoreEntityQueryInField(ref _userClickEvent)
-				.ForEach((ref UserClickEvent click) => { position = click.Position; }).Run();
+			var userClickEvent = GetSingleton<UserClickEvent>();
+			var position = userClickEvent.Position;;
 
 			Dependency = new SetEntityPositionJob
 			             {

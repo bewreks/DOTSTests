@@ -12,7 +12,6 @@ namespace Systems
 	[UpdateAfter(typeof(PointerSystem))]
 	public partial class PlayerSystem : SystemBase
 	{
-		private EntityQuery _userClickEvent;
 		private EntityQuery _playerQuery;
 
 		private EndInitializationEntityCommandBufferSystem _bufferSystem;
@@ -31,18 +30,12 @@ namespace Systems
 
 			_bufferSystem = World.GetOrCreateSystem<EndInitializationEntityCommandBufferSystem>();
 
-			RequireForUpdate(_userClickEvent);
+			RequireSingletonForUpdate<UserClickEvent>();
 		}
 
 		protected override void OnUpdate()
 		{
-			var position = float3.zero;
-
-			Entities
-				.WithAll<UserClickEvent>()
-				.WithStoreEntityQueryInField(ref _userClickEvent)
-				.ForEach((ref UserClickEvent click) => { position = click.Position; }).Run();
-
+			var position = GetSingleton<UserClickEvent>().Position;
 
 			Dependency = new StartRotateToJob
 			             {

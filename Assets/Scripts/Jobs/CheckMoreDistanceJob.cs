@@ -14,13 +14,17 @@ namespace Jobs
 		public float                              Distance;
 		public EntityCommandBuffer.ParallelWriter Ecb;
 
-		private void Execute([EntityInQueryIndex] int index, Entity e, in Translation translation)
+		private void Execute([EntityInQueryIndex] int index,
+		                     Entity                   e,
+		                     in Translation           translation,
+		                     in ButtonMarker          button)
 		{
 			var distance = math.distance(Positions[index].Value, translation.Value);
 
 			if (distance > Distance)
 			{
 				Ecb.RemoveComponent<ButtonPressedMarker>(index, e);
+				Ecb.RemoveComponent<MoveToComponent>(index, button.Door);
 			}
 		}
 	}

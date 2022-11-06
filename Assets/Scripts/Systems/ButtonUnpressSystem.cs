@@ -7,7 +7,7 @@ using Unity.Transforms;
 namespace Systems
 {
 	[UpdateInGroup(typeof(UpdateGroup))]
-	[UpdateAfter(typeof(ButtonSystem))]
+	[UpdateAfter(typeof(ButtonPressSystem))]
 	public partial class ButtonUnpressSystem : SystemBase
 	{
 		private EntityQuery _playerQuery;

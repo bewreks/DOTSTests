@@ -36,7 +36,8 @@ namespace Systems
 				                                     },
 				                               None = new ComponentType[]
 				                                      {
-					                                      typeof(ButtonPressedMarker)
+					                                      typeof(ButtonPressedMarker),
+					                                      typeof(DoorOpenedMarker)
 				                                      }
 			                               });
 
@@ -49,11 +50,14 @@ namespace Systems
 		{
 			var playerPositions = _playerQuery.ToComponentDataArray<Translation>(Allocator.TempJob);
 
+			var componentDataFromEntity = GetComponentDataFromEntity<DoorMarker>();
 			Dependency = new Jobs.CheckLessDistanceJob
 			             {
-				             Positions = playerPositions,
-				             Distance  = 1,
-				             Ecb       = _commandBufferSystem.CreateCommandBuffer().AsParallelWriter()
+				             Positions     = playerPositions,
+				             Distance      = 1,
+				             Ecb           = _commandBufferSystem.CreateCommandBuffer().AsParallelWriter(),
+				             DoorMarker    = componentDataFromEntity,
+				             DoorPositions = GetComponentDataFromEntity<Translation>()
 			             }.ScheduleParallel(_buttonsQuery, Dependency);
 
 			Dependency = playerPositions.Dispose(Dependency);

@@ -8,6 +8,8 @@ namespace Systems
 	
 	[UpdateInGroup(typeof(UpdateGroup))]
 	[UpdateAfter(typeof(ButtonPressSystem))]
+	[UpdateBefore(typeof(ButtonPressSystem))]
+	[DisableAutoCreation]
 	public partial class ButtonSystem : SystemBase
 	{
 		private EntityQuery _buttonsQuery;
